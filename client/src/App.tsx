@@ -4,6 +4,10 @@ import { Login } from "./pages/auth/login"
 import { Signup } from "./pages/auth/signup"
 import { Toaster } from "sonner"
 import { AuthProvider } from "./context/AuthProvider"
+import Dashboard from "./pages/Dashboard/Dashboard"
+import DashboardLayout from "./pages/Dashboard/DashboardLayout"
+import FolderPage from "./pages/Dashboard/FolderPage"
+import { ProtectedRoute } from "./components/protected-route"
 
 const router = createBrowserRouter([
   {
@@ -13,6 +17,18 @@ const router = createBrowserRouter([
       { path: "/signup", element: <Signup /> },
     ],
   },
+  {
+  element: <ProtectedRoute />,
+  children: [
+    {
+      element: <DashboardLayout />,
+      children: [
+        { path: "/", element: <Dashboard /> },
+        { path: "/folder/:id", element: <FolderPage /> },
+      ],
+    },
+  ],
+}
 ])
 
 export function App() {

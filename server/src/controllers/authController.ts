@@ -4,6 +4,10 @@ import jwt, { SignOptions } from "jsonwebtoken";
 import User from "../models/User";
 import { signupSchema, loginSchema } from "../schemas/authSchema";
 
+interface CustomRequest extends Request {
+  user?: { id: string };
+}
+
 const signToken = (id: string) => {
   const options: SignOptions = {
     expiresIn: (process.env.JWT_EXPIRES_IN || "7d") as SignOptions["expiresIn"],
@@ -62,6 +66,28 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error("Login error:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getMe = async (req: CustomRequest, res: Response) => {
+  try {
+    if (!req.user?.id) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User no longer exists" });
+    }
+
+    return res.json({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+    });
+  } catch (err) {
+    console.error("GetMe error:", err);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

@@ -1,5 +1,4 @@
-// src/models/User.ts
-import mongoose, { Document, Model } from "mongoose";
+import mongoose, { Document } from "mongoose";
 import bcrypt from "bcryptjs";
 
 export interface IUser extends Document {
