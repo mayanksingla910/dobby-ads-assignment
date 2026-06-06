@@ -5,6 +5,7 @@ import { connectDB } from "./config/db";
 import authRoutes from "./routes/authRoutes";
 import folderRoutes from "./routes/folderRoutes";
 import imageRoutes from "./routes/imageRoutes";
+import mcpRouter from "./mcp/mcpRouter";
 
 const app = express();
 
@@ -14,6 +15,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/folders", folderRoutes);
 app.use("/api/images", imageRoutes);
+
+app.use("/mcp", mcpRouter);
 
 app.get("/", (_req, res) => res.json({ status: "ok" }));
 
