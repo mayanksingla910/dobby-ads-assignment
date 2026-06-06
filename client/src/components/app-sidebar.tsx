@@ -1,6 +1,11 @@
-import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { ChevronRight, Folder, FolderOpen, LogOut } from "lucide-react"
+import {
+  ChevronRight,
+  Folder,
+  FolderOpen,
+  GalleryVerticalEnd,
+  LogOut,
+} from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -9,6 +14,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSkeleton,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -16,7 +22,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { getAllFolders } from "@/api/folders"
 import { useAuth } from "@/hooks/useAuth"
 import type { Folder as FolderType } from "@/types/folder"
 import {
@@ -24,6 +29,8 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
+import { useAllFolders } from "@/hooks/useFolders"
+import { useState } from "react"
 
 type FolderNode = FolderType & { children: FolderNode[] }
 
@@ -47,9 +54,10 @@ function FolderTreeItem({
   const navigate = useNavigate()
   const isActive = id === node._id
   const hasChildren = node.children.length > 0
+  const [open, setOpen] = useState(isActive)
 
   return (
-    <Collapsible defaultOpen={isActive}>
+    <Collapsible open={open} onOpenChange={setOpen}>
       <SidebarMenuItem>
         <div
           className="flex items-center"
@@ -57,14 +65,12 @@ function FolderTreeItem({
         >
           <CollapsibleTrigger asChild>
             <button
-              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-sm ${hasChildren ? 'hover:bg-sidebar-accent' : ''}`}
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-sm ${hasChildren ? "hover:bg-sidebar-accent" : ""}`}
               onClick={(e) => e.stopPropagation()}
             >
-              {hasChildren ? (
-                <ChevronRight className="size-3.5 transition-transform duration-200 in-data-[state=open]:rotate-90" />
-              ) : (
-                <span className="w-3.5" />
-              )}
+              <ChevronRight
+                className={`size-3.5 transition-transform duration-200 ${open ? "rotate-90" : ""}`}
+              />
             </button>
           </CollapsibleTrigger>
 
@@ -123,29 +129,36 @@ function UserCard({ user }: { user: ReturnType<typeof useAuth>["user"] }) {
 export function AppSidebar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [folders, setFolders] = useState<FolderType[]>([])
-
-  useEffect(() => {
-    getAllFolders().then((data) => setFolders(data.folders || []))
-  }, [])
+  const { folders, isLoading } = useAllFolders()
 
   const tree = buildTree(folders)
 
   return (
     <Sidebar>
-      <SidebarHeader className="p-4 text-lg font-semibold">
-        Dobby Ads
+      <SidebarHeader className="flex flex-row items-center gap-2 p-6 text-lg font-semibold">
+        <GalleryVerticalEnd className="size-5" />
+        <p className="text-xl font-bold tracking-wide">Dobby Ads</p>
       </SidebarHeader>
 
       <SidebarContent className="overflow-x-auto overflow-y-auto p-2">
-        <SidebarMenu className="min-w-max">
-          {tree.map((node) => (
-            <FolderTreeItem key={node._id} node={node} />
-          ))}
-          {tree.length === 0 && (
-            <p className="px-2 text-sm text-muted-foreground">No folders yet</p>
-          )}
-        </SidebarMenu>
+        {isLoading ? (
+          <div>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <SidebarMenuSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <SidebarMenu className="min-w-max">
+            {tree.map((node) => (
+              <FolderTreeItem key={node._id} node={node} />
+            ))}
+            {tree.length === 0 && (
+              <p className="px-2 text-sm text-muted-foreground">
+                No folders yet
+              </p>
+            )}
+          </SidebarMenu>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="flex flex-row items-center justify-between border-t p-2 py-3">

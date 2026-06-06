@@ -1,3 +1,4 @@
+// folder-card.tsx
 import { Folder, MoreVertical, Trash2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { formatSize, formatDate } from "@/lib/format"
@@ -8,24 +9,29 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { deleteFolder } from "@/api/folders"
 import { toast } from "sonner"
 import type { Folder as FolderType } from "@/types/folder"
+import { useRootFolders, useAllFolders } from "@/hooks/useFolders"
 
-type Props = {
-  folder: FolderType
-  onRefresh: () => void
-}
+type Props = { folder: FolderType; onDelete?: (id: string) => Promise<void> }
 
-export function FolderCard({ folder, onRefresh }: Props) {
+export function FolderCard({ folder, onDelete }: Props) {
   const navigate = useNavigate()
+  const { optimisticDelete: deleteFromRoot } = useRootFolders()
+  const { optimisticDelete: deleteFromAll } = useAllFolders()
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation()
     try {
-      await deleteFolder(folder._id)
+      if (onDelete) {
+        await onDelete(folder._id)
+      } else {
+        await Promise.all([
+          deleteFromRoot(folder._id),
+          deleteFromAll(folder._id),
+        ])
+      }
       toast.success("Folder deleted")
-      onRefresh()
     } catch {
       toast.error("Failed to delete folder")
     }
@@ -33,24 +39,22 @@ export function FolderCard({ folder, onRefresh }: Props) {
 
   return (
     <div
-      className="group relative flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent cursor-pointer transition-colors"
+      className="group relative flex cursor-pointer items-center gap-3 rounded-lg border bg-card p-3 transition-colors hover:bg-accent"
       onClick={() => navigate(`/folder/${folder._id}`)}
     >
-      <Folder className="size-8 text-blue-400 shrink-0" />
-
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{folder.name}</p>
+      <Folder className="size-8 shrink-0 text-blue-400" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{folder.name}</p>
         <p className="text-xs text-muted-foreground">
           {formatSize(folder.totalSize)} · {formatDate(folder.updatedAt)}
         </p>
       </div>
-
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 opacity-0 group-hover:opacity-100 shrink-0"
+            className="size-7 shrink-0 opacity-0 group-hover:opacity-100"
             onClick={(e) => e.stopPropagation()}
           >
             <MoreVertical className="size-4" />
@@ -61,7 +65,7 @@ export function FolderCard({ folder, onRefresh }: Props) {
             className="text-destructive focus:text-destructive"
             onClick={handleDelete}
           >
-            <Trash2 className="size-4 mr-2" />
+            <Trash2 className="mr-2 size-4" />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>

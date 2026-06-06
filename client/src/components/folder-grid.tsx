@@ -5,10 +5,10 @@ import type { Folder } from "@/types/folder"
 type Props = {
   folders: Folder[]
   loading: boolean
-  onRefresh: () => void
+  onDelete?: (id: string) => Promise<void> 
 }
 
-export function FolderGrid({ folders, loading, onRefresh }: Props) {
+export function FolderGrid({ folders, loading, onDelete }: Props) {
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -24,7 +24,7 @@ export function FolderGrid({ folders, loading, onRefresh }: Props) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
       {folders.map((folder) => (
-        <FolderCard key={folder._id} folder={folder} onRefresh={onRefresh} />
+        <FolderCard key={folder._id} folder={folder} onDelete={onDelete} />
       ))}
     </div>
   )

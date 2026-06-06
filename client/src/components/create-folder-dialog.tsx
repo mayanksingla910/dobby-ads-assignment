@@ -1,3 +1,4 @@
+// create-folder-dialog.tsx
 import { useState } from "react"
 import { FolderPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -10,31 +11,33 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { createFolder } from "@/api/folders"
 import { toast } from "sonner"
 import { LoadingSwap } from "./loading-swap"
+import { useAllFolders } from "@/hooks/useFolders"
 
 type Props = {
   parentId: string | null
-  onCreated: () => void
+  onOptimisticCreate?: (name: string) => Promise<void>
 }
 
-export function CreateFolderDialog({ parentId, onCreated }: Props) {
+export function CreateFolderDialog({ parentId, onOptimisticCreate }: Props) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [loading, setLoading] = useState(false)
+  const { optimisticCreate } = useAllFolders()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
-
     try {
       setLoading(true)
-      await createFolder(name.trim(), parentId ?? undefined)
+      await (onOptimisticCreate ?? optimisticCreate)(
+        name.trim(),
+        parentId ?? undefined
+      )
       toast.success("Folder created")
       setName("")
       setOpen(false)
-      onCreated()
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Failed to create folder")
     } finally {
