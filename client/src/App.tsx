@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard/Dashboard"
 import DashboardLayout from "./pages/Dashboard/DashboardLayout"
 import FolderPage from "./pages/Dashboard/FolderPage"
 import { ProtectedRoute } from "./components/protected-route"
+import NotFound from "./components/not-found"
 
 const router = createBrowserRouter([
   {
@@ -18,17 +19,21 @@ const router = createBrowserRouter([
     ],
   },
   {
-  element: <ProtectedRoute />,
-  children: [
-    {
-      element: <DashboardLayout />,
-      children: [
-        { path: "/", element: <Dashboard /> },
-        { path: "/folder/:id", element: <FolderPage /> },
-      ],
-    },
-  ],
-}
+    element: <ProtectedRoute />,
+    children: [
+      {
+        element: <DashboardLayout />,
+        children: [
+          { path: "/", element: <Dashboard /> },
+          { path: "/folder/:id", element: <FolderPage /> },
+        ],
+      },
+    ],
+  },
+  {
+    path: "*",
+    element: <NotFound />,
+  },
 ])
 
 export function App() {
