@@ -25,7 +25,7 @@ export function SelectionBar({
 }: Props) {
   if (!isSelecting) return null
   return (
-    <div className="fixed bottom-10 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border bg-background px-4 py-2 shadow-lg">
+    <div className="fixed bottom-16 w-88 sm:bottom-10 left-1/2 z-50 flex -translate-x-1/2 items-center justify-center gap-3 rounded-full border bg-background px-4 py-2 shadow-lg">
       <button onClick={onClear} className="rounded-full p-1 hover:bg-accent">
         <X className="size-4" />
       </button>

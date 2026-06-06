@@ -25,24 +25,43 @@ export default function Dashboard() {
   const { view, toggle } = useViewMode()
   const { mutate } = useSWRConfig()
 
-  const { folders, isLoading, optimisticCreate, optimisticDelete, optimisticRename } =
-    useRootFolders()
+  const {
+    folders,
+    isLoading,
+    optimisticCreate,
+    optimisticDelete,
+    optimisticRename,
+  } = useRootFolders()
 
   const {
-    selected, isSelecting, isSelected,
-    toggle: toggleItem, rangeSelect,
-    selectAll, clearAll, deselectAll, count,
+    selected,
+    isSelecting,
+    isSelected,
+    toggle: toggleItem,
+    rangeSelect,
+    selectAll,
+    clearAll,
+    deselectAll,
+    count,
   } = useSelection()
 
   const lastSelectedId = useRef<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  useEffect(() => { clearItems() }, [])
+  useEffect(() => {
+    clearItems()
+  }, [])
 
   const isEmpty = !isLoading && folders.length === 0
-  const totalFoldersSize = folders.reduce((acc: number, f: Folder) => acc + (f.totalSize || 0), 0)
+  const totalFoldersSize = folders.reduce(
+    (acc: number, f: Folder) => acc + (f.totalSize || 0),
+    0
+  )
   const sortedFolders = sortItems(folders, sort.field, sort.direction)
-  const allItems = sortedFolders.map((f) => ({ id: f._id, type: "folder" as const }))
+  const allItems = sortedFolders.map((f) => ({
+    id: f._id,
+    type: "folder" as const,
+  }))
 
   const handleToggle = (id: string) => (e?: React.MouseEvent) => {
     const item = { id, type: "folder" as const }
@@ -67,18 +86,26 @@ export default function Dashboard() {
         "folders",
         async (current: any) => {
           await Promise.all(folderIds.map(deleteFolder))
-          return { folders: current.folders.filter((f: Folder) => !folderIds.includes(f._id)) }
+          return {
+            folders: current.folders.filter(
+              (f: Folder) => !folderIds.includes(f._id)
+            ),
+          }
         },
         {
           optimisticData: (current: any) => ({
-            folders: current.folders.filter((f: Folder) => !folderIds.includes(f._id)),
+            folders: current.folders.filter(
+              (f: Folder) => !folderIds.includes(f._id)
+            ),
           }),
           revalidate: false,
           rollbackOnError: true,
         }
       )
       clearAll()
-      toast.success(`Deleted ${folderIds.length} folder${folderIds.length !== 1 ? "s" : ""}`)
+      toast.success(
+        `Deleted ${folderIds.length} folder${folderIds.length !== 1 ? "s" : ""}`
+      )
     } catch {
       toast.error("Failed to delete some folders")
     } finally {
@@ -88,12 +115,19 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 p-6">
-      <div className="flex items-center justify-between">
-        <CreateFolderDialog parentId={null} onOptimisticCreate={optimisticCreate} />
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <CreateFolderDialog
+            parentId={null}
+            onOptimisticCreate={optimisticCreate}
+          />
         <div className="flex items-center gap-2">
           <SortControl sort={sort} onSort={updateSort} />
           <Button variant="outline" size="icon" onClick={toggle}>
-            {view === "grid" ? <List className="size-4" /> : <LayoutGrid className="size-4" />}
+            {view === "grid" ? (
+              <List className="size-4" />
+            ) : (
+              <LayoutGrid className="size-4" />
+            )}
           </Button>
         </div>
       </div>
@@ -113,13 +147,17 @@ export default function Dashboard() {
       {isEmpty && (
         <div className="flex flex-col items-center justify-center gap-2 py-32 text-center">
           <p className="text-lg font-medium">The Drive is empty</p>
-          <p className="text-sm text-muted-foreground">Create a folder to get started</p>
+          <p className="text-sm text-muted-foreground">
+            Create a folder to get started
+          </p>
         </div>
       )}
 
       <footer className="absolute right-6 bottom-0 left-6 flex items-center justify-between bg-background py-2 text-sm text-muted-foreground">
         <p>{formatSize(totalFoldersSize)} total</p>
-        <p>{folders.length} folder{folders.length !== 1 ? "s" : ""}</p>
+        <p>
+          {folders.length} folder{folders.length !== 1 ? "s" : ""}
+        </p>
       </footer>
 
       <SelectionBar

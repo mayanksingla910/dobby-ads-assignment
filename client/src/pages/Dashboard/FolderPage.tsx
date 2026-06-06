@@ -140,7 +140,7 @@ export default function FolderPage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
         <div className="flex gap-2">
           <CreateFolderDialog
             parentId={id!}
