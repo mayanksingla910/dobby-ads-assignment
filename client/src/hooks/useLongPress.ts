@@ -5,7 +5,7 @@ export function useLongPress(onLongPress: () => void, delay = 500) {
   const didLongPress = useRef(false)
 
   const start = useCallback(
-    (e: React.TouchEvent) => {
+    () => {
       didLongPress.current = false
       timer.current = setTimeout(() => {
         didLongPress.current = true
