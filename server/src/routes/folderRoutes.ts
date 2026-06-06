@@ -5,6 +5,7 @@ import {
   createFolder,
   deleteFolder,
   getAllFolders,
+  renameFolder,
 } from "../controllers/folderController";
 import { protect } from "../middleware/authMiddleware";
 
@@ -17,5 +18,6 @@ router.get("/all", getAllFolders);
 router.get("/:id", getFolderById);
 router.post("/", createFolder);
 router.delete("/:id", deleteFolder);
+router.patch("/:id/rename", renameFolder)
 
 export default router;

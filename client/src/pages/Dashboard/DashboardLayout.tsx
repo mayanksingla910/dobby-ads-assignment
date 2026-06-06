@@ -9,6 +9,7 @@ import {
 import { Outlet } from "react-router-dom"
 import ThemeToggle from "@/components/theme-toggle"
 
+
 export default function DashboardLayout() {
   return (
     <SidebarProvider>
@@ -23,7 +24,7 @@ export default function DashboardLayout() {
             />
             <HeaderBreadcrumb />
           </div>
-          <ThemeToggle className="mr-8"/>
+          <ThemeToggle className="mr-8" />
         </header>
         <main className="flex-1 overflow-auto">
           <Outlet />

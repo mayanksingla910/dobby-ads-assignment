@@ -1,8 +1,14 @@
-// hooks/useFolders.ts
 import useSWR from "swr"
-import { getAllFolders, getRootFolders, getFolderById, createFolder, deleteFolder } from "@/api/folders"
+import {
+  getAllFolders,
+  getRootFolders,
+  getFolderById,
+  createFolder,
+  deleteFolder,
+  renameFolder,
+} from "@/api/folders"
 import type { Folder, Image } from "@/types/folder"
-
+import { renameImage as renameImageApi } from "@/api/images"
 
 function makeTempFolder(name: string, parentId?: string | null): Folder {
   return {
@@ -17,10 +23,17 @@ function makeTempFolder(name: string, parentId?: string | null): Folder {
 
 function flatFolderMutate(mutate: Function, folders: Folder[]) {
   return {
-    async create(name: string, parentId: string | undefined, fetcher: () => Promise<any>) {
+    async create(
+      name: string,
+      parentId: string | undefined,
+      fetcher: () => Promise<any>
+    ) {
       const temp = makeTempFolder(name, parentId)
       await mutate(
-        async () => { await createFolder(name, parentId); return fetcher() },
+        async () => {
+          await createFolder(name, parentId)
+          return fetcher()
+        },
         {
           optimisticData: { folders: [...folders, temp] },
           revalidate: false,
@@ -30,9 +43,27 @@ function flatFolderMutate(mutate: Function, folders: Folder[]) {
     },
     async delete(id: string, fetcher: () => Promise<any>) {
       await mutate(
-        async () => { await deleteFolder(id); return fetcher() },
+        async () => {
+          await deleteFolder(id)
+          return fetcher()
+        },
         {
           optimisticData: { folders: folders.filter((f) => f._id !== id) },
+          revalidate: false,
+          rollbackOnError: true,
+        }
+      )
+    },
+    async rename(id: string, name: string, fetcher: () => Promise<any>) {
+      await mutate(
+        async () => {
+          await renameFolder(id, name)
+          return fetcher()
+        },
+        {
+          optimisticData: {
+            folders: folders.map((f) => (f._id === id ? { ...f, name } : f)),
+          },
           revalidate: false,
           rollbackOnError: true,
         }
@@ -44,7 +75,7 @@ function flatFolderMutate(mutate: Function, folders: Folder[]) {
 export function useAllFolders() {
   const { data, error, isLoading, mutate } = useSWR("folders/all", getAllFolders)
   const folders: Folder[] = data?.folders ?? []
-  const { create, delete: del } = flatFolderMutate(mutate, folders)
+  const { create, delete: del, rename } = flatFolderMutate(mutate, folders) 
 
   return {
     folders,
@@ -53,13 +84,14 @@ export function useAllFolders() {
     mutate,
     optimisticCreate: (name: string, parentId?: string) => create(name, parentId, getAllFolders),
     optimisticDelete: (id: string) => del(id, getAllFolders),
+    optimisticRename: (id: string, name: string) => rename(id, name, getAllFolders),
   }
 }
 
 export function useRootFolders() {
   const { data, isLoading, mutate } = useSWR("folders", getRootFolders)
   const folders: Folder[] = data?.folders ?? []
-  const { create, delete: del } = flatFolderMutate(mutate, folders)
+  const { create, delete: del, rename } = flatFolderMutate(mutate, folders)  
 
   return {
     folders,
@@ -67,13 +99,13 @@ export function useRootFolders() {
     mutate,
     optimisticCreate: (name: string, parentId?: string) => create(name, parentId, getRootFolders),
     optimisticDelete: (id: string) => del(id, getRootFolders),
+    optimisticRename: (id: string, name: string) => rename(id, name, getRootFolders),
   }
 }
 
 export function useFolder(id: string | undefined) {
-  const { data, isLoading, mutate } = useSWR(
-    id ? `folders/${id}` : null,
-    () => getFolderById(id!)
+  const { data, isLoading, mutate } = useSWR(id ? `folders/${id}` : null, () =>
+    getFolderById(id!)
   )
 
   const subfolders: Folder[] = data?.subfolders ?? []
@@ -82,7 +114,10 @@ export function useFolder(id: string | undefined) {
   async function optimisticCreateSubfolder(name: string) {
     const temp = makeTempFolder(name, id)
     await mutate(
-      async () => { await createFolder(name, id); return getFolderById(id!) },
+      async () => {
+        await createFolder(name, id)
+        return getFolderById(id!)
+      },
       {
         optimisticData: (current: any) => ({
           ...current,
@@ -96,11 +131,56 @@ export function useFolder(id: string | undefined) {
 
   async function optimisticDeleteSubfolder(folderId: string) {
     await mutate(
-      async () => { await deleteFolder(folderId); return getFolderById(id!) },
+      async () => {
+        await deleteFolder(folderId)
+        return getFolderById(id!)
+      },
       {
         optimisticData: (current: any) => ({
           ...current,
-          subfolders: current?.subfolders?.filter((f: Folder) => f._id !== folderId) ?? [],
+          subfolders:
+            current?.subfolders?.filter((f: Folder) => f._id !== folderId) ??
+            [],
+        }),
+        revalidate: false,
+        rollbackOnError: true,
+      }
+    )
+  }
+
+  async function optimisticRenameSubfolder(folderId: string, name: string) {
+    await mutate(
+      async () => {
+        await renameFolder(folderId, name)
+        return getFolderById(id!)
+      },
+      {
+        optimisticData: (current: any) => ({
+          ...current,
+          subfolders:
+            current?.subfolders?.map((f: Folder) =>
+              f._id === folderId ? { ...f, name } : f
+            ) ?? [],
+        }),
+        revalidate: false,
+        rollbackOnError: true,
+      }
+    )
+  }
+
+  async function optimisticRenameImage(imageId: string, name: string) {
+    await mutate(
+      async () => {
+        await renameImageApi(imageId, name)
+        return getFolderById(id!)
+      },
+      {
+        optimisticData: (current: any) => ({
+          ...current,
+          images:
+            current?.images?.map((img: Image) =>
+              img._id === imageId ? { ...img, name } : img
+            ) ?? [],
         }),
         revalidate: false,
         rollbackOnError: true,
@@ -116,5 +196,7 @@ export function useFolder(id: string | undefined) {
     mutate,
     optimisticCreateSubfolder,
     optimisticDeleteSubfolder,
+    optimisticRenameSubfolder,
+    optimisticRenameImage,
   }
 }

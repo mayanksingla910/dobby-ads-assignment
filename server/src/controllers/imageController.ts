@@ -62,3 +62,20 @@ export const deleteImage = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: "Server error" })
   }
 }
+export const renameImage = async (req: AuthRequest, res: Response) => {
+  try {
+    const { name } = req.body
+    if (!name?.trim()) return res.status(400).json({ message: "Name is required" })
+
+    const image = await Image.findOneAndUpdate(
+      { _id: req.params.id, owner: req.user!._id },
+      { name: name.trim() },
+      { new: true }
+    )
+    if (!image) return res.status(404).json({ message: "Image not found" })
+
+    res.json({ image })
+  } catch (err) {
+    res.status(500).json({ message: "Server error" })
+  }
+}

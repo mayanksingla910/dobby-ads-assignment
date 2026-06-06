@@ -1,5 +1,5 @@
 import { Router } from "express"
-import { uploadImage, deleteImage } from "../controllers/imageController"
+import { uploadImage, deleteImage, renameImage } from "../controllers/imageController"
 import { protect } from "../middleware/authMiddleware"
 import multer from "multer"
 
@@ -11,5 +11,6 @@ router.use(protect)
 
 router.post("/", upload.single("image"), uploadImage)
 router.delete("/:id", deleteImage)
+router.patch("/:id/rename", renameImage)
 
 export default router
